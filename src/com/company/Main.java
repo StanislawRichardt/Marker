@@ -1,6 +1,8 @@
 package com.company;
 
 import java.io.*;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +15,8 @@ public class Main {
     static List<String[]> symbolCounterList = new ArrayList<>();
     static int fileLength = 0;
     static String data;
+    static double marker;
+    static DecimalFormat numberFormat = new DecimalFormat("#0.00000");
 
     // Functionalities: Do a bunch of magic to prepare a file to be read
     public static void fileUtility(){
@@ -94,7 +98,7 @@ public class Main {
     private static void dictionaryDisplay() {
         dictionaryCreation();
         for (int i = 1; i < symbolCounterList.size(); i++) {
-            //DecimalFormat numberFormat = new DecimalFormat("#.00");
+
             System.out.println(symbolCounterList.get(i)[0]+'\t'+" | "+
                     symbolCounterList.get(i)[1]+'\t'+" | "+
                     symbolCounterList.get(i)[2]);
@@ -103,7 +107,7 @@ public class Main {
 
     //Functionality: calculate marker
     private static double calculateMarker() {
-        double lowValue=0, highValue=1;
+        double newLowValue=0, newHighValue=1, oldLowValue=0, oldHighValue=1;
         fileUtility();
 
         try {
@@ -111,16 +115,20 @@ public class Main {
                 for (int i = 0; i < data.length(); i++) {
                         for (int j = 1; j < symbolCounterList.size(); j++) {
                             if (symbolCounterList.get(j)[0].charAt(0) == data.charAt(i)) {
-                                lowValue = lowValue + (highValue - lowValue) * Double.parseDouble(symbolCounterList.get(j-1)[2]);
-                                highValue = lowValue + (highValue - lowValue) * Double.parseDouble(symbolCounterList.get(j)[2]);
+                                newLowValue = oldLowValue + (oldHighValue - oldLowValue) * Double.parseDouble(symbolCounterList.get(j-1)[2]);
+                                newHighValue = oldLowValue + (oldHighValue - oldLowValue) * Double.parseDouble(symbolCounterList.get(j)[2]);
+                                break;
                             }
                         }
+                    oldLowValue=newLowValue;
+                    oldHighValue=newHighValue;
                     }
                 }
+            marker=(oldHighValue+oldLowValue)/2;
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return (highValue+lowValue)/2;
+        return marker;
     }
 
     //Functionality: displays marker
@@ -129,12 +137,37 @@ public class Main {
     }
 
     private static void decodingMarker(){
+        System.out.println();
+        double newLowValue=0, newHighValue=1, oldLowValue=0, oldHighValue=1, t;
+        for(int j=0;j<=fileLength;j++) {
+            for (int i = symbolCounterList.size() - 1; i > 0; i--) {
 
+                t = (marker - oldLowValue) / (oldHighValue - oldLowValue);
+
+                if (Double.parseDouble(symbolCounterList.get(i)[2]) >= t && Double.parseDouble(symbolCounterList.get(i - 1)[2]) <= t) {
+
+                        System.out.print(symbolCounterList.get(i)[0]);
+                    newLowValue = oldLowValue + (oldHighValue - oldLowValue) * Double.parseDouble(symbolCounterList.get(i - 1)[2]);
+                    newHighValue = oldLowValue + (oldHighValue - oldLowValue) * Double.parseDouble(symbolCounterList.get(i)[2]);
+                        break;
+                }
+            }
+            oldLowValue=newLowValue;
+            oldHighValue=newHighValue;
+        }
+    }
+
+    private static double roundingUp(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+
+        BigDecimal bd = new BigDecimal(Double.toString(value));
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
+        return bd.doubleValue();
     }
 
     public static void main(String[] args) {
         dictionaryDisplay();
         displayMarker();
-	    //decodingMarker();
+	    decodingMarker();
     }
 }
