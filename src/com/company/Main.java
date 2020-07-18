@@ -16,7 +16,6 @@ public class Main {
     static int fileLength = 0;
     static String data;
     static double marker;
-    static DecimalFormat numberFormat = new DecimalFormat("#0.00000");
 
     // Functionalities: Do a bunch of magic to prepare a file to be read
     public static void fileUtility(){
